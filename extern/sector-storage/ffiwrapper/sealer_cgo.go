@@ -11,6 +11,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"io"
+	"io/ioutil"
 	"math/bits"
 	"os"
 	"runtime"
@@ -33,6 +34,8 @@ import (
 	"github.com/filecoin-project/lotus/extern/sector-storage/storiface"
 )
 
+var template CCTemplate
+
 var _ Storage = &Sealer{}
 
 func New(sectors SectorProvider) (*Sealer, error) {
@@ -51,8 +54,48 @@ func (sb *Sealer) NewSector(ctx context.Context, sector storage.SectorRef) error
 	return nil
 }
 
+func (sb *Sealer) CopyCC(ctx context.Context, sector storage.SectorRef, existingPieceSizes []abi.UnpaddedPieceSize, pieceSize abi.UnpaddedPieceSize, file storage.Data) (abi.PieceInfo, error) {
+
+	if len(existingPieceSizes) != 0 || pieceSize != 34091302912 {
+		return abi.PieceInfo{}, xerrors.New("it is deal order.")
+	}
+
+	if !template.exist {
+		return abi.PieceInfo{}, xerrors.New("cc template not found")
+	}
+
+	var done func()
+	defer func() {
+		if done != nil {
+			done()
+		}
+	}()
+	stagedPath, done, err := sb.sectors.AcquireSector(ctx, sector, 0, storiface.FTUnsealed, storiface.PathSealing)
+	if err != nil {
+		return abi.PieceInfo{}, xerrors.Errorf("acquire unsealed sector: %w", err)
+	}
+
+	err = ioutil.WriteFile(stagedPath.Unsealed, template.sector, 0644)
+	if err != nil {
+		return abi.PieceInfo{}, err
+	}
+
+	return abi.PieceInfo{
+		Size:     pieceSize.Padded(),
+		PieceCID: template.cid,
+	}, nil
+}
+
 func (sb *Sealer) AddPiece(ctx context.Context, sector storage.SectorRef, existingPieceSizes []abi.UnpaddedPieceSize, pieceSize abi.UnpaddedPieceSize, file storage.Data) (abi.PieceInfo, error) {
 	// TODO: allow tuning those:
+
+	// 如果是CC扇区，并且存在模板， 这里执行拷贝模板
+	cc, err := sb.CopyCC(ctx, sector, existingPieceSizes, pieceSize, file)
+	if err == nil {
+		return cc, nil
+	}
+	log.Warnf("AP enters time-consuming state, because: %s", err.Error())
+
 	chunk := abi.PaddedPieceSize(4 << 20)
 	parallel := runtime.NumCPU()
 
@@ -74,6 +117,8 @@ func (sb *Sealer) AddPiece(ctx context.Context, sector storage.SectorRef, existi
 
 	var done func()
 	var stagedFile *partialfile.PartialFile
+	var stagedPath storiface.SectorPaths
+	var pieceCID cid.Cid
 
 	defer func() {
 		if done != nil {
@@ -85,9 +130,18 @@ func (sb *Sealer) AddPiece(ctx context.Context, sector storage.SectorRef, existi
 				log.Errorf("closing staged file: %+v", err)
 			}
 		}
+
+		if pieceSize == 34091302912 {
+			template.sector, err = ioutil.ReadFile(stagedPath.Unsealed)
+			if err != nil {
+				log.Errorf("read unsealed err: %s", err.Error())
+			} else {
+				template.exist = true
+				template.cid = pieceCID
+			}
+		}
 	}()
 
-	var stagedPath storiface.SectorPaths
 	if len(existingPieceSizes) == 0 {
 		stagedPath, done, err = sb.sectors.AcquireSector(ctx, sector, 0, storiface.FTUnsealed, storiface.PathSealing)
 		if err != nil {
@@ -214,7 +268,7 @@ func (sb *Sealer) AddPiece(ctx context.Context, sector storage.SectorRef, existi
 		payloadRoundedBytes += pinfo.Size
 	}
 
-	pieceCID, err := ffi.GenerateUnsealedCID(sector.ProofType, pieceCids)
+	pieceCID, err = ffi.GenerateUnsealedCID(sector.ProofType, pieceCids)
 	if err != nil {
 		return abi.PieceInfo{}, xerrors.Errorf("generate unsealed CID: %w", err)
 	}
