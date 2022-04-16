@@ -105,7 +105,7 @@ require (
 	github.com/ipfs/interface-go-ipfs-core v0.5.2
 	github.com/ipld/go-car v0.3.3
 	github.com/ipld/go-car/v2 v2.1.1
-	github.com/ipld/go-codec-dagpb v1.3.1
+	github.com/ipld/go-codec-dagpb v1.3.2
 	github.com/ipld/go-ipld-prime v0.16.0
 	github.com/ipld/go-ipld-selector-text-lite v0.0.1
 	github.com/jonboulle/clockwork v0.2.2 // indirect
@@ -113,7 +113,7 @@ require (
 	github.com/koalacxr/quantile v0.0.1
 	github.com/libp2p/go-buffer-pool v0.0.2
 	github.com/libp2p/go-eventbus v0.2.1
-	github.com/libp2p/go-libp2p v0.18.0
+	github.com/libp2p/go-libp2p v0.18.1
 	github.com/libp2p/go-libp2p-connmgr v0.3.1
 	github.com/libp2p/go-libp2p-core v0.14.0
 	github.com/libp2p/go-libp2p-discovery v0.6.0
@@ -123,11 +123,11 @@ require (
 	github.com/libp2p/go-libp2p-pubsub v0.6.1
 	github.com/libp2p/go-libp2p-quic-transport v0.16.1
 	github.com/libp2p/go-libp2p-record v0.1.3
-	github.com/libp2p/go-libp2p-resource-manager v0.1.5
+	github.com/libp2p/go-libp2p-resource-manager v0.2.0
 	github.com/libp2p/go-libp2p-routing-helpers v0.2.3
 	github.com/libp2p/go-libp2p-swarm v0.10.2
 	github.com/libp2p/go-libp2p-tls v0.3.1
-	github.com/libp2p/go-libp2p-yamux v0.8.2
+	github.com/libp2p/go-libp2p-yamux v0.9.0
 	github.com/libp2p/go-maddr-filter v0.1.0
 	github.com/mattn/go-isatty v0.0.14
 	github.com/minio/blake2b-simd v0.0.0-20160723061019-3f5f724cb5b1
@@ -166,7 +166,7 @@ require (
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/sys v0.0.0-20211209171907-798191bca915
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac
-	golang.org/x/tools v0.1.7
+	golang.org/x/tools v0.1.10
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 	gopkg.in/cheggaaa/pb.v1 v1.0.28
 	gotest.tools v2.2.0+incompatible

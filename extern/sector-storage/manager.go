@@ -7,16 +7,17 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/google/uuid"
+	"github.com/filecoin-project/go-statestore"
 	"github.com/hashicorp/go-multierror"
-	"github.com/ipfs/go-cid"
-	logging "github.com/ipfs/go-log/v2"
 	"github.com/mitchellh/go-homedir"
+
+	"github.com/google/uuid"
+	cid "github.com/ipfs/go-cid"
+	logging "github.com/ipfs/go-log/v2"
 	"go.uber.org/multierr"
 	"golang.org/x/xerrors"
 
 	"github.com/filecoin-project/go-state-types/abi"
-	"github.com/filecoin-project/go-statestore"
 	"github.com/filecoin-project/specs-storage/storage"
 
 	"github.com/filecoin-project/lotus/extern/sector-storage/ffiwrapper"
@@ -705,7 +706,7 @@ func (m *Manager) ReleaseUnsealed(ctx context.Context, sector storage.SectorRef,
 	if err != nil {
 		return err
 	}
-	if len(safeToFree) != 0 || safeToFree[0].Offset != 0 || safeToFree[0].Size.Padded() != abi.PaddedPieceSize(ssize) {
+	if len(safeToFree) == 0 || safeToFree[0].Offset != 0 || safeToFree[0].Size.Padded() != abi.PaddedPieceSize(ssize) {
 		// todo support partial free
 		return nil
 	}
