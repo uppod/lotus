@@ -190,7 +190,7 @@ type FullNodeStruct struct {
 
 		ClientMinerQueryOffer func(p0 context.Context, p1 address.Address, p2 cid.Cid, p3 *cid.Cid) (QueryOffer, error) `perm:"read"`
 
-		ClientQueryAsk func(p0 context.Context, p1 peer.ID, p2 address.Address) (*storagemarket.StorageAsk, error) `perm:"read"`
+		ClientQueryAsk func(p0 context.Context, p1 peer.ID, p2 address.Address) (*StorageAsk, error) `perm:"read"`
 
 		ClientRemoveImport func(p0 context.Context, p1 imports.ID) error `perm:"admin"`
 
@@ -363,6 +363,8 @@ type FullNodeStruct struct {
 		StateListMiners func(p0 context.Context, p1 types.TipSetKey) ([]address.Address, error) `perm:"read"`
 
 		StateLookupID func(p0 context.Context, p1 address.Address, p2 types.TipSetKey) (address.Address, error) `perm:"read"`
+
+		StateLookupRobustAddress func(p0 context.Context, p1 address.Address, p2 types.TipSetKey) (address.Address, error) `perm:"read"`
 
 		StateMarketBalance func(p0 context.Context, p1 address.Address, p2 types.TipSetKey) (MarketBalance, error) `perm:"read"`
 
@@ -1571,14 +1573,14 @@ func (s *FullNodeStub) ClientMinerQueryOffer(p0 context.Context, p1 address.Addr
 	return *new(QueryOffer), ErrNotSupported
 }
 
-func (s *FullNodeStruct) ClientQueryAsk(p0 context.Context, p1 peer.ID, p2 address.Address) (*storagemarket.StorageAsk, error) {
+func (s *FullNodeStruct) ClientQueryAsk(p0 context.Context, p1 peer.ID, p2 address.Address) (*StorageAsk, error) {
 	if s.Internal.ClientQueryAsk == nil {
 		return nil, ErrNotSupported
 	}
 	return s.Internal.ClientQueryAsk(p0, p1, p2)
 }
 
-func (s *FullNodeStub) ClientQueryAsk(p0 context.Context, p1 peer.ID, p2 address.Address) (*storagemarket.StorageAsk, error) {
+func (s *FullNodeStub) ClientQueryAsk(p0 context.Context, p1 peer.ID, p2 address.Address) (*StorageAsk, error) {
 	return nil, ErrNotSupported
 }
 
@@ -2525,6 +2527,17 @@ func (s *FullNodeStruct) StateLookupID(p0 context.Context, p1 address.Address, p
 }
 
 func (s *FullNodeStub) StateLookupID(p0 context.Context, p1 address.Address, p2 types.TipSetKey) (address.Address, error) {
+	return *new(address.Address), ErrNotSupported
+}
+
+func (s *FullNodeStruct) StateLookupRobustAddress(p0 context.Context, p1 address.Address, p2 types.TipSetKey) (address.Address, error) {
+	if s.Internal.StateLookupRobustAddress == nil {
+		return *new(address.Address), ErrNotSupported
+	}
+	return s.Internal.StateLookupRobustAddress(p0, p1, p2)
+}
+
+func (s *FullNodeStub) StateLookupRobustAddress(p0 context.Context, p1 address.Address, p2 types.TipSetKey) (address.Address, error) {
 	return *new(address.Address), ErrNotSupported
 }
 
