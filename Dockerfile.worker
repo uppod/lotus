@@ -1,6 +1,9 @@
 FROM ubuntu:20.04 AS base
 MAINTAINER Lotus Development Team
 
+ARG DEBIAN_FRONTEND=noninteractive
+ENV TZ=Asia/Shanghai
+
 RUN apt-get update && apt-get install -y ca-certificates build-essential clang ocl-icd-opencl-dev ocl-icd-libopencl1 jq libhwloc-dev
 
 RUN useradd -r -u 532 -U fc \
