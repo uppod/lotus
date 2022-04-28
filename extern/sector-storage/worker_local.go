@@ -32,6 +32,8 @@ import (
 var pathTypes = []storiface.SectorFileType{storiface.FTUnsealed, storiface.FTSealed, storiface.FTCache, storiface.FTUpdate, storiface.FTUpdateCache}
 
 type WorkerConfig struct {
+	Hostname  string
+	Cores     int
 	TaskTypes []sealtasks.TaskType
 	NoSwap    bool
 
@@ -49,6 +51,8 @@ type ExecutorFunc func() (ffiwrapper.Storage, error)
 type EnvFunc func(string) (string, bool)
 
 type LocalWorker struct {
+	hostname   string
+	cores      int
 	storage    stores.Store
 	localStore *stores.Local
 	sindex     stores.SectorIndex
@@ -79,7 +83,21 @@ func newLocalWorker(executor ExecutorFunc, wcfg WorkerConfig, envLookup EnvFunc,
 		acceptTasks[taskType] = struct{}{}
 	}
 
+	if wcfg.Hostname == "" {
+		hostname, err := os.Hostname() // TODO: allow overriding from config
+		if err != nil {
+			panic(err)
+		}
+		wcfg.Hostname = hostname
+	}
+
+	if wcfg.Cores == 0 {
+		wcfg.Cores = runtime.NumCPU()
+	}
+
 	w := &LocalWorker{
+		hostname:   wcfg.Hostname,
+		cores:      wcfg.Cores,
 		storage:    store,
 		localStore: local,
 		sindex:     sindex,
@@ -762,10 +780,6 @@ func (l *LocalWorker) memInfo() (memPhysical, memUsed, memSwap, memSwapUsed uint
 }
 
 func (l *LocalWorker) Info(context.Context) (storiface.WorkerInfo, error) {
-	hostname, err := os.Hostname() // TODO: allow overriding from config
-	if err != nil {
-		panic(err)
-	}
 
 	gpus, err := ffi.GetGPUDevices()
 	if err != nil {
@@ -785,14 +799,14 @@ func (l *LocalWorker) Info(context.Context) (storiface.WorkerInfo, error) {
 	}
 
 	return storiface.WorkerInfo{
-		Hostname:        hostname,
+		Hostname:        l.hostname,
 		IgnoreResources: l.ignoreResources,
 		Resources: storiface.WorkerResources{
 			MemPhysical: memPhysical,
 			MemUsed:     memUsed,
 			MemSwap:     memSwap,
 			MemSwapUsed: memSwapUsed,
-			CPUs:        uint64(runtime.NumCPU()),
+			CPUs:        uint64(l.cores),
 			GPUs:        gpus,
 			Resources:   resEnv,
 		},

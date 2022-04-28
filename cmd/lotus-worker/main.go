@@ -120,6 +120,16 @@ var runCmd = &cli.Command{
 	Usage: "Start lotus worker",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
+			Name:  "hostname",
+			Usage: "Work name. If it is empty, hostname will be used.",
+			Value: "",
+		},
+		&cli.IntFlag{
+			Name:  "cores",
+			Usage: "Manually set the number of cores, because trust and golang use different cores",
+			Value: 0,
+		},
+		&cli.StringFlag{
 			Name:  "listen",
 			Usage: "host address and port the worker api will listen on",
 			Value: "0.0.0.0:3456",
@@ -471,6 +481,8 @@ var runCmd = &cli.Command{
 
 		workerApi := &sealworker.Worker{
 			LocalWorker: sectorstorage.NewLocalWorker(sectorstorage.WorkerConfig{
+				Hostname:                  cctx.String("hostname"),
+				Cores:                     cctx.Int("cores"),
 				TaskTypes:                 taskTypes,
 				NoSwap:                    cctx.Bool("no-swap"),
 				MaxParallelChallengeReads: cctx.Int("post-parallel-reads"),
