@@ -1,0 +1,29 @@
+FROM ubuntu:20.04 AS base
+MAINTAINER Lotus Development Team
+
+ARG DEBIAN_FRONTEND=noninteractive
+ENV TZ=Asia/Shanghai
+
+RUN apt-get update && apt-get install -y ca-certificates build-essential clang ocl-icd-opencl-dev ocl-icd-libopencl1 jq libhwloc-dev
+
+RUN useradd -r -u 532 -U fc \
+ && mkdir -p /etc/OpenCL/vendors \
+ && echo "libnvidia-opencl.so.1" > /etc/OpenCL/vendors/nvidia.icd
+
+COPY ./lotus-worker /usr/local/bin/
+
+ENV FILECOIN_PARAMETER_CACHE /var/tmp/filecoin-proof-parameters
+ENV LOTUS_WORKER_PATH /var/lib/lotus-worker
+
+RUN mkdir /var/lib/lotus-worker
+RUN chown fc: /var/lib/lotus-worker
+
+VOLUME /var/lib/lotus-worker
+
+USER fc
+
+EXPOSE 3456
+
+ENTRYPOINT ["/usr/local/bin/lotus-worker"]
+
+CMD ["-help"]
