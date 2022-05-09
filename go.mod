@@ -357,6 +357,6 @@ require (
 	modernc.org/xc v1.0.0 // indirect
 )
 
-replace github.com/filecoin-project/filecoin-ffi => ./extern/filecoin-ffi
-
-replace github.com/filecoin-project/test-vectors => ./extern/test-vectors
+//replace github.com/filecoin-project/filecoin-ffi => ./extern/filecoin-ffi
+//
+//replace github.com/filecoin-project/test-vectors => ./extern/test-vectors
