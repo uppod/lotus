@@ -1,6 +1,3 @@
-[submodule "extern/filecoin-ffi"]
-	path = extern/filecoin-ffi
-	url = https://github.com/uppod/filecoin-ffi.git
 [submodule "extern/serialization-vectors"]
 	path = extern/serialization-vectors
 	url = https://github.com/uppod/serialization-vectors.git
