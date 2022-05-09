@@ -7,16 +7,17 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/google/uuid"
+	"github.com/filecoin-project/go-statestore"
 	"github.com/hashicorp/go-multierror"
-	"github.com/ipfs/go-cid"
-	logging "github.com/ipfs/go-log/v2"
 	"github.com/mitchellh/go-homedir"
+
+	"github.com/google/uuid"
+	cid "github.com/ipfs/go-cid"
+	logging "github.com/ipfs/go-log/v2"
 	"go.uber.org/multierr"
 	"golang.org/x/xerrors"
 
 	"github.com/filecoin-project/go-state-types/abi"
-	"github.com/filecoin-project/go-statestore"
 	"github.com/filecoin-project/specs-storage/storage"
 
 	"github.com/filecoin-project/lotus/extern/sector-storage/ffiwrapper"
@@ -164,7 +165,7 @@ func New(ctx context.Context, lstor *stores.Local, stor stores.Store, ls stores.
 		sealtasks.TTCommit1, sealtasks.TTProveReplicaUpdate1, sealtasks.TTFinalize, sealtasks.TTFetch, sealtasks.TTFinalizeReplicaUpdate,
 	}
 	if sc.AllowAddPiece {
-		localTasks = append(localTasks, sealtasks.TTAddPiece)
+		localTasks = append(localTasks, sealtasks.TTAddPiece, sealtasks.TTDataCid)
 	}
 	if sc.AllowPreCommit1 {
 		localTasks = append(localTasks, sealtasks.TTPreCommit1)
@@ -324,6 +325,27 @@ func (m *Manager) SectorsUnsealPiece(ctx context.Context, sector storage.SectorR
 func (m *Manager) NewSector(ctx context.Context, sector storage.SectorRef) error {
 	log.Warnf("stub NewSector")
 	return nil
+}
+
+func (m *Manager) DataCid(ctx context.Context, pieceSize abi.UnpaddedPieceSize, pieceData storage.Data) (abi.PieceInfo, error) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	selector := newTaskSelector()
+
+	var out abi.PieceInfo
+	err := m.sched.Schedule(ctx, storage.NoSectorRef, sealtasks.TTDataCid, selector, schedNop, func(ctx context.Context, w Worker) error {
+		p, err := m.waitSimpleCall(ctx)(w.DataCid(ctx, pieceSize, pieceData))
+		if err != nil {
+			return err
+		}
+		if p != nil {
+			out = p.(abi.PieceInfo)
+		}
+		return nil
+	})
+
+	return out, err
 }
 
 func (m *Manager) AddPiece(ctx context.Context, sector storage.SectorRef, existingPieces []abi.UnpaddedPieceSize, sz abi.UnpaddedPieceSize, r io.Reader) (abi.PieceInfo, error) {
@@ -705,7 +727,7 @@ func (m *Manager) ReleaseUnsealed(ctx context.Context, sector storage.SectorRef,
 	if err != nil {
 		return err
 	}
-	if len(safeToFree) != 0 || safeToFree[0].Offset != 0 || safeToFree[0].Size.Padded() != abi.PaddedPieceSize(ssize) {
+	if len(safeToFree) == 0 || safeToFree[0].Offset != 0 || safeToFree[0].Size.Padded() != abi.PaddedPieceSize(ssize) {
 		// todo support partial free
 		return nil
 	}
@@ -972,6 +994,10 @@ func (m *Manager) ProveReplicaUpdate2(ctx context.Context, sector storage.Sector
 	}
 
 	return out, waitErr
+}
+
+func (m *Manager) ReturnDataCid(ctx context.Context, callID storiface.CallID, pi abi.PieceInfo, err *storiface.CallError) error {
+	return m.returnResult(ctx, callID, pi, err)
 }
 
 func (m *Manager) ReturnAddPiece(ctx context.Context, callID storiface.CallID, pi abi.PieceInfo, err *storiface.CallError) error {
