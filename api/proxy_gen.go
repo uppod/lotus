@@ -190,7 +190,7 @@ type FullNodeStruct struct {
 
 		ClientMinerQueryOffer func(p0 context.Context, p1 address.Address, p2 cid.Cid, p3 *cid.Cid) (QueryOffer, error) `perm:"read"`
 
-		ClientQueryAsk func(p0 context.Context, p1 peer.ID, p2 address.Address) (*storagemarket.StorageAsk, error) `perm:"read"`
+		ClientQueryAsk func(p0 context.Context, p1 peer.ID, p2 address.Address) (*StorageAsk, error) `perm:"read"`
 
 		ClientRemoveImport func(p0 context.Context, p1 imports.ID) error `perm:"admin"`
 
@@ -363,6 +363,8 @@ type FullNodeStruct struct {
 		StateListMiners func(p0 context.Context, p1 types.TipSetKey) ([]address.Address, error) `perm:"read"`
 
 		StateLookupID func(p0 context.Context, p1 address.Address, p2 types.TipSetKey) (address.Address, error) `perm:"read"`
+
+		StateLookupRobustAddress func(p0 context.Context, p1 address.Address, p2 types.TipSetKey) (address.Address, error) `perm:"read"`
 
 		StateMarketBalance func(p0 context.Context, p1 address.Address, p2 types.TipSetKey) (MarketBalance, error) `perm:"read"`
 
@@ -639,6 +641,8 @@ type StorageMinerStruct struct {
 
 		CheckProvable func(p0 context.Context, p1 abi.RegisteredPoStProof, p2 []storage.SectorRef, p3 bool) (map[abi.SectorNumber]string, error) `perm:"admin"`
 
+		ComputeDataCid func(p0 context.Context, p1 abi.UnpaddedPieceSize, p2 storage.Data) (abi.PieceInfo, error) `perm:"admin"`
+
 		ComputeProof func(p0 context.Context, p1 []builtin.ExtendedSectorInfo, p2 abi.PoStRandomness, p3 abi.ChainEpoch, p4 abinetwork.Version) ([]builtin.PoStProof, error) `perm:"read"`
 
 		ComputeWindowPoSt func(p0 context.Context, p1 uint64, p2 types.TipSetKey) ([]miner.SubmitWindowedPoStParams, error) `perm:"admin"`
@@ -740,6 +744,8 @@ type StorageMinerStruct struct {
 		PledgeSector func(p0 context.Context) (abi.SectorID, error) `perm:"write"`
 
 		ReturnAddPiece func(p0 context.Context, p1 storiface.CallID, p2 abi.PieceInfo, p3 *storiface.CallError) error `perm:"admin"`
+
+		ReturnDataCid func(p0 context.Context, p1 storiface.CallID, p2 abi.PieceInfo, p3 *storiface.CallError) error `perm:"admin"`
 
 		ReturnFetch func(p0 context.Context, p1 storiface.CallID, p2 *storiface.CallError) error `perm:"admin"`
 
@@ -891,6 +897,8 @@ type WalletStub struct {
 type WorkerStruct struct {
 	Internal struct {
 		AddPiece func(p0 context.Context, p1 storage.SectorRef, p2 []abi.UnpaddedPieceSize, p3 abi.UnpaddedPieceSize, p4 storage.Data) (storiface.CallID, error) `perm:"admin"`
+
+		DataCid func(p0 context.Context, p1 abi.UnpaddedPieceSize, p2 storage.Data) (storiface.CallID, error) `perm:"admin"`
 
 		Enabled func(p0 context.Context) (bool, error) `perm:"admin"`
 
@@ -1571,14 +1579,14 @@ func (s *FullNodeStub) ClientMinerQueryOffer(p0 context.Context, p1 address.Addr
 	return *new(QueryOffer), ErrNotSupported
 }
 
-func (s *FullNodeStruct) ClientQueryAsk(p0 context.Context, p1 peer.ID, p2 address.Address) (*storagemarket.StorageAsk, error) {
+func (s *FullNodeStruct) ClientQueryAsk(p0 context.Context, p1 peer.ID, p2 address.Address) (*StorageAsk, error) {
 	if s.Internal.ClientQueryAsk == nil {
 		return nil, ErrNotSupported
 	}
 	return s.Internal.ClientQueryAsk(p0, p1, p2)
 }
 
-func (s *FullNodeStub) ClientQueryAsk(p0 context.Context, p1 peer.ID, p2 address.Address) (*storagemarket.StorageAsk, error) {
+func (s *FullNodeStub) ClientQueryAsk(p0 context.Context, p1 peer.ID, p2 address.Address) (*StorageAsk, error) {
 	return nil, ErrNotSupported
 }
 
@@ -2525,6 +2533,17 @@ func (s *FullNodeStruct) StateLookupID(p0 context.Context, p1 address.Address, p
 }
 
 func (s *FullNodeStub) StateLookupID(p0 context.Context, p1 address.Address, p2 types.TipSetKey) (address.Address, error) {
+	return *new(address.Address), ErrNotSupported
+}
+
+func (s *FullNodeStruct) StateLookupRobustAddress(p0 context.Context, p1 address.Address, p2 types.TipSetKey) (address.Address, error) {
+	if s.Internal.StateLookupRobustAddress == nil {
+		return *new(address.Address), ErrNotSupported
+	}
+	return s.Internal.StateLookupRobustAddress(p0, p1, p2)
+}
+
+func (s *FullNodeStub) StateLookupRobustAddress(p0 context.Context, p1 address.Address, p2 types.TipSetKey) (address.Address, error) {
 	return *new(address.Address), ErrNotSupported
 }
 
@@ -3848,6 +3867,17 @@ func (s *StorageMinerStub) CheckProvable(p0 context.Context, p1 abi.RegisteredPo
 	return *new(map[abi.SectorNumber]string), ErrNotSupported
 }
 
+func (s *StorageMinerStruct) ComputeDataCid(p0 context.Context, p1 abi.UnpaddedPieceSize, p2 storage.Data) (abi.PieceInfo, error) {
+	if s.Internal.ComputeDataCid == nil {
+		return *new(abi.PieceInfo), ErrNotSupported
+	}
+	return s.Internal.ComputeDataCid(p0, p1, p2)
+}
+
+func (s *StorageMinerStub) ComputeDataCid(p0 context.Context, p1 abi.UnpaddedPieceSize, p2 storage.Data) (abi.PieceInfo, error) {
+	return *new(abi.PieceInfo), ErrNotSupported
+}
+
 func (s *StorageMinerStruct) ComputeProof(p0 context.Context, p1 []builtin.ExtendedSectorInfo, p2 abi.PoStRandomness, p3 abi.ChainEpoch, p4 abinetwork.Version) ([]builtin.PoStProof, error) {
 	if s.Internal.ComputeProof == nil {
 		return *new([]builtin.PoStProof), ErrNotSupported
@@ -4406,6 +4436,17 @@ func (s *StorageMinerStruct) ReturnAddPiece(p0 context.Context, p1 storiface.Cal
 }
 
 func (s *StorageMinerStub) ReturnAddPiece(p0 context.Context, p1 storiface.CallID, p2 abi.PieceInfo, p3 *storiface.CallError) error {
+	return ErrNotSupported
+}
+
+func (s *StorageMinerStruct) ReturnDataCid(p0 context.Context, p1 storiface.CallID, p2 abi.PieceInfo, p3 *storiface.CallError) error {
+	if s.Internal.ReturnDataCid == nil {
+		return ErrNotSupported
+	}
+	return s.Internal.ReturnDataCid(p0, p1, p2, p3)
+}
+
+func (s *StorageMinerStub) ReturnDataCid(p0 context.Context, p1 storiface.CallID, p2 abi.PieceInfo, p3 *storiface.CallError) error {
 	return ErrNotSupported
 }
 
@@ -5143,6 +5184,17 @@ func (s *WorkerStruct) AddPiece(p0 context.Context, p1 storage.SectorRef, p2 []a
 }
 
 func (s *WorkerStub) AddPiece(p0 context.Context, p1 storage.SectorRef, p2 []abi.UnpaddedPieceSize, p3 abi.UnpaddedPieceSize, p4 storage.Data) (storiface.CallID, error) {
+	return *new(storiface.CallID), ErrNotSupported
+}
+
+func (s *WorkerStruct) DataCid(p0 context.Context, p1 abi.UnpaddedPieceSize, p2 storage.Data) (storiface.CallID, error) {
+	if s.Internal.DataCid == nil {
+		return *new(storiface.CallID), ErrNotSupported
+	}
+	return s.Internal.DataCid(p0, p1, p2)
+}
+
+func (s *WorkerStub) DataCid(p0 context.Context, p1 abi.UnpaddedPieceSize, p2 storage.Data) (storiface.CallID, error) {
 	return *new(storiface.CallID), ErrNotSupported
 }
 
