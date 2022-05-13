@@ -31,8 +31,7 @@ var FSOverheadSeal = map[SectorFileType]int{ // 10x overheads
 	FTSealed:      FSOverheadDen,
 	FTUpdate:      FSOverheadDen,
 	FTUpdateCache: FSOverheadDen*2 + 1,
-	FTCache:       100,
-	//FTCache:       141, // 11 layers + D(2x ssize) + C + R'
+	FTCache:       141, // 11 layers + D(2x ssize) + C + R'
 }
 
 // sector size * disk / fs overhead.  FSOverheadDen is like the unit of sector size

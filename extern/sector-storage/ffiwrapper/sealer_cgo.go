@@ -10,14 +10,14 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"github.com/ipfs/go-cid"
+	"golang.org/x/xerrors"
 	"io"
 	"io/ioutil"
 	"math/bits"
 	"os"
 	"runtime"
-
-	"github.com/ipfs/go-cid"
-	"golang.org/x/xerrors"
+	"time"
 
 	"github.com/detailyang/go-fallocate"
 	ffi "github.com/filecoin-project/filecoin-ffi"
@@ -35,6 +35,8 @@ import (
 )
 
 var template CCTemplate
+
+var nextPreCommit time.Time
 
 var _ Storage = &Sealer{}
 
@@ -673,6 +675,13 @@ func (sb *Sealer) ReadPiece(ctx context.Context, writer io.Writer, sector storag
 }
 
 func (sb *Sealer) SealPreCommit1(ctx context.Context, sector storage.SectorRef, ticket abi.SealRandomness, pieces []abi.PieceInfo) (out storage.PreCommit1Out, err error) {
+
+	if time.Now().Before(nextPreCommit) {
+		return nil, xerrors.New("pre commit must be 15 minutes apart")
+	}
+
+	nextPreCommit = time.Now().Add(time.Minute * 15)
+
 	paths, done, err := sb.sectors.AcquireSector(ctx, sector, storiface.FTUnsealed, storiface.FTSealed|storiface.FTCache, storiface.PathSealing)
 	if err != nil {
 		return nil, xerrors.Errorf("acquiring sector paths: %w", err)
