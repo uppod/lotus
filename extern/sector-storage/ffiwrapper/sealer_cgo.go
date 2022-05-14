@@ -677,10 +677,10 @@ func (sb *Sealer) ReadPiece(ctx context.Context, writer io.Writer, sector storag
 func (sb *Sealer) SealPreCommit1(ctx context.Context, sector storage.SectorRef, ticket abi.SealRandomness, pieces []abi.PieceInfo) (out storage.PreCommit1Out, err error) {
 
 	if time.Now().Before(nextPreCommit) {
-		return nil, xerrors.New("pre commit must be 15 minutes apart")
+		return nil, xerrors.New("pre commit must be 14 minutes apart")
 	}
 
-	nextPreCommit = time.Now().Add(time.Minute * 15)
+	nextPreCommit = time.Now().Add(time.Minute * 14)
 
 	paths, done, err := sb.sectors.AcquireSector(ctx, sector, storiface.FTUnsealed, storiface.FTSealed|storiface.FTCache, storiface.PathSealing)
 	if err != nil {
