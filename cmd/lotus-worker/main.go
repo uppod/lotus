@@ -129,6 +129,11 @@ var runCmd = &cli.Command{
 			Usage: "Manually set the number of cores, because trust and golang use different cores",
 			Value: 0,
 		},
+		&cli.Uint64Flag{
+			Name:  "mem",
+			Usage: "Manually set the memory size",
+			Value: 0,
+		},
 		&cli.StringFlag{
 			Name:  "listen",
 			Usage: "host address and port the worker api will listen on",
@@ -483,6 +488,7 @@ var runCmd = &cli.Command{
 			LocalWorker: sectorstorage.NewLocalWorker(sectorstorage.WorkerConfig{
 				Hostname:                  cctx.String("hostname"),
 				Cores:                     cctx.Int("cores"),
+				Mem:                       cctx.Uint64("mem"),
 				TaskTypes:                 taskTypes,
 				NoSwap:                    cctx.Bool("no-swap"),
 				MaxParallelChallengeReads: cctx.Int("post-parallel-reads"),

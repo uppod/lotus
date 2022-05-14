@@ -34,6 +34,7 @@ var pathTypes = []storiface.SectorFileType{storiface.FTUnsealed, storiface.FTSea
 type WorkerConfig struct {
 	Hostname  string
 	Cores     int
+	Mem       uint64
 	TaskTypes []sealtasks.TaskType
 	NoSwap    bool
 
@@ -53,6 +54,7 @@ type EnvFunc func(string) (string, bool)
 type LocalWorker struct {
 	hostname   string
 	cores      int
+	mem        uint64
 	storage    stores.Store
 	localStore *stores.Local
 	sindex     stores.SectorIndex
@@ -98,6 +100,7 @@ func newLocalWorker(executor ExecutorFunc, wcfg WorkerConfig, envLookup EnvFunc,
 	w := &LocalWorker{
 		hostname:   wcfg.Hostname,
 		cores:      wcfg.Cores,
+		mem:        wcfg.Mem,
 		storage:    store,
 		localStore: local,
 		sindex:     sindex,
@@ -802,6 +805,12 @@ func (l *LocalWorker) Info(context.Context) (storiface.WorkerInfo, error) {
 	memPhysical, memUsed, memSwap, memSwapUsed, err := l.memInfo()
 	if err != nil {
 		return storiface.WorkerInfo{}, xerrors.Errorf("getting memory info: %w", err)
+	}
+	if l.mem != 0 {
+		memPhysical = l.mem
+		memUsed = 0
+		memSwapUsed = 0
+		memSwap = 0
 	}
 
 	resEnv, err := storiface.ParseResourceEnv(func(key, def string) (string, bool) {
