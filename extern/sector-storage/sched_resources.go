@@ -33,10 +33,6 @@ func (a *activeResources) hasWorkWaiting() bool {
 	return a.waiting > 0
 }
 
-func (a *activeResources) updateLastCallTime() {
-	a.lastCallTime = time.Now()
-}
-
 // add task resources to activeResources and return utilization difference
 func (a *activeResources) add(wr storiface.WorkerResources, r storiface.Resources) float64 {
 	//startUtil := a.utilization(wr)
@@ -159,7 +155,10 @@ func (a *activeResources) utilization(wr storiface.WorkerResources) float64 {
 	return max
 }
 
-func (wh *workerHandle) sequentialCall() float64 {
+func (wh *workerHandle) sequentialCall(taskType sealtasks.TaskType) float64 {
+	if taskType == sealtasks.TTAddPiece {
+		wh.active.lastCallTime = time.Now()
+	}
 	return wh.active.lastCallDuration()
 }
 

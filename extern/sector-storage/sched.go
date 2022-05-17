@@ -486,21 +486,18 @@ func (sh *scheduler) trySched() {
 				continue
 			}
 
-			log.Infof("任务类型: %s", task.taskType)
-			if task.taskType == sealtasks.TTAddPiece {
-				wu, found := workerUtil[wid]
-				if !found {
-					wu = w.sequentialCall()
-					workerUtil[wid] = wu
-				}
+			wu, found := workerUtil[wid]
+			if !found {
+				wu = w.sequentialCall(task.taskType)
+				workerUtil[wid] = wu
+			}
 
-				log.Infof("bestLastCall: %f", bestLastCall)
-				log.Infof("lastCall: %f", wu)
-				if wu < bestLastCall {
-					log.Infof("wu is : %f", wu)
-					break
-				}
-				bestLastCall = wu
+			log.Infof("任务类型：%s", task.taskType)
+			log.Infof("bestLastCall: %f", bestLastCall)
+			log.Infof("lastCall: %f", wu)
+			if wu < bestLastCall {
+				log.Infof("wu is : %f", wu)
+				break
 			}
 
 			//wu, found := workerUtil[wid]
@@ -530,7 +527,7 @@ func (sh *scheduler) trySched() {
 			bestWid = wid
 			selectedWindow = wnd
 			//bestUtilization = wu
-
+			bestLastCall = wu
 			break
 		}
 
@@ -547,10 +544,7 @@ func (sh *scheduler) trySched() {
 			"worker", bestWid,
 			"lastcall", bestLastCall)
 
-		if task.taskType == sealtasks.TTAddPiece {
-			windows[selectedWindow].allocated.updateLastCallTime()
-		}
-		workerUtil[bestWid] += windows[selectedWindow].allocated.add(info.Resources, needRes)
+		workerUtil[bestWid] = windows[selectedWindow].allocated.add(info.Resources, needRes)
 		windows[selectedWindow].todo = append(windows[selectedWindow].todo, task)
 
 		rmQueue = append(rmQueue, sqi)
