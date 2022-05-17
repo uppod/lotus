@@ -493,7 +493,7 @@ func (sh *scheduler) trySched() {
 				workerUtil[wid] = wu
 			}
 
-			if wu >= bestLastCall {
+			if wu < bestLastCall {
 				break
 			}
 
