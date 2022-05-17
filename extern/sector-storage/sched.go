@@ -488,7 +488,7 @@ func (sh *scheduler) trySched() {
 
 			wu, found := workerUtil[wid]
 			if !found {
-				wu = w.sequentialCall(task.taskType)
+				wu = w.sequentialCall()
 				workerUtil[wid] = wu
 			}
 
@@ -528,7 +528,7 @@ func (sh *scheduler) trySched() {
 			selectedWindow = wnd
 			//bestUtilization = wu
 			bestLastCall = wu
-			break
+			w.updateLastCall(task.taskType)
 		}
 
 		if selectedWindow < 0 {

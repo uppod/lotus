@@ -155,10 +155,13 @@ func (a *activeResources) utilization(wr storiface.WorkerResources) float64 {
 	return max
 }
 
-func (wh *workerHandle) sequentialCall(taskType sealtasks.TaskType) float64 {
+func (wh *workerHandle) updateLastCall(taskType sealtasks.TaskType) {
 	if taskType == sealtasks.TTAddPiece {
 		wh.active.lastCallTime = time.Now()
 	}
+}
+
+func (wh *workerHandle) sequentialCall() float64 {
 	return wh.active.lastCallDuration()
 }
 
