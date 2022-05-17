@@ -493,6 +493,8 @@ func (sh *scheduler) trySched() {
 					workerUtil[wid] = wu
 				}
 
+				log.Infof("bestLastCall: %f", bestLastCall)
+				log.Infof("lastCall: %f", wu)
 				if wu < bestLastCall {
 					log.Infof("wu is : %f", wu)
 					break
@@ -544,10 +546,10 @@ func (sh *scheduler) trySched() {
 			"worker", bestWid,
 			"lastcall", bestLastCall)
 
-		workerUtil[bestWid] += windows[selectedWindow].allocated.add(info.Resources, needRes)
 		if task.taskType == sealtasks.TTAddPiece {
 			windows[selectedWindow].allocated.updateLastCallTime()
 		}
+		workerUtil[bestWid] += windows[selectedWindow].allocated.add(info.Resources, needRes)
 		windows[selectedWindow].todo = append(windows[selectedWindow].todo, task)
 
 		rmQueue = append(rmQueue, sqi)
