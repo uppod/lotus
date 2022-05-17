@@ -2,6 +2,7 @@ package sectorstorage
 
 import (
 	"context"
+	"math"
 	"math/rand"
 	"sort"
 	"sync"
@@ -120,8 +121,6 @@ type activeResources struct {
 	memUsedMax uint64
 	gpuUsed    float64
 	cpuUse     uint64
-
-	lastCallTime time.Time
 
 	cond    *sync.Cond
 	waiting int
@@ -470,8 +469,7 @@ func (sh *scheduler) trySched() {
 		var needRes storiface.Resources
 		var info storiface.WorkerInfo
 		var bestWid storiface.WorkerID
-		//bestUtilization := math.MaxFloat64 // smaller = better
-		bestLastCall := 810.0
+		bestUtilization := math.MaxFloat64 // smaller = better
 
 		for i, wnd := range acceptableWindows[task.indexHeap] {
 			wid := sh.openWindows[wnd].worker
@@ -488,50 +486,31 @@ func (sh *scheduler) trySched() {
 
 			wu, found := workerUtil[wid]
 			if !found {
-				wu = w.sequentialCall()
+				wu = w.utilization()
 				workerUtil[wid] = wu
 			}
-
-			log.Infof("任务类型：%s", task.taskType)
-			log.Infof("bestLastCall: %f", bestLastCall)
-			log.Infof("lastCall: %f", wu)
-
-			if task.taskType == sealtasks.TTAddPiece {
-				if wu < bestLastCall {
-					log.Infof("wu is : %f", wu)
-					continue
-				}
+			if wu >= bestUtilization {
+				// acceptable worker list is initially sorted by utilization, and the initially-best workers
+				// will be assigned tasks first. This means that if we find a worker which isn't better, it
+				// probably means that the other workers aren't better either.
+				//
+				// utilization
+				// ^
+				// |       /
+				// | \    /
+				// |  \  /
+				// |   *
+				// #--------> acceptableWindow index
+				//
+				// * -> we're here
+				break
 			}
-
-			//wu, found := workerUtil[wid]
-			//if !found {
-			//	wu = w.utilization()
-			//	workerUtil[wid] = wu
-			//}
-			//if wu >= bestUtilization {
-			//	// acceptable worker list is initially sorted by utilization, and the initially-best workers
-			//	// will be assigned tasks first. This means that if we find a worker which isn't better, it
-			//	// probably means that the other workers aren't better either.
-			//	//
-			//	// utilization
-			//	// ^
-			//	// |       /
-			//	// | \    /
-			//	// |  \  /
-			//	// |   *
-			//	// #--------> acceptableWindow index
-			//	//
-			//	// * -> we're here
-			//	break
-			//}
 
 			info = w.info
 			needRes = res
 			bestWid = wid
 			selectedWindow = wnd
-			//bestUtilization = wu
-			bestLastCall = wu
-			w.updateLastCall(task.taskType)
+			bestUtilization = wu
 		}
 
 		if selectedWindow < 0 {
@@ -545,7 +524,7 @@ func (sh *scheduler) trySched() {
 			"task", task.taskType,
 			"window", selectedWindow,
 			"worker", bestWid,
-			"lastcall", bestLastCall)
+			"bestUtilization", bestUtilization)
 
 		workerUtil[bestWid] = windows[selectedWindow].allocated.add(info.Resources, needRes)
 		windows[selectedWindow].todo = append(windows[selectedWindow].todo, task)

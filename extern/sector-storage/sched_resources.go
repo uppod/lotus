@@ -35,7 +35,7 @@ func (a *activeResources) hasWorkWaiting() bool {
 
 // add task resources to activeResources and return utilization difference
 func (a *activeResources) add(wr storiface.WorkerResources, r storiface.Resources) float64 {
-	//startUtil := a.utilization(wr)
+	startUtil := a.utilization(wr)
 
 	if r.GPUUtilization > 0 {
 		a.gpuUsed += r.GPUUtilization
@@ -44,8 +44,7 @@ func (a *activeResources) add(wr storiface.WorkerResources, r storiface.Resource
 	a.memUsedMin += r.MinMemory
 	a.memUsedMax += r.MaxMemory
 
-	//return a.utilization(wr) - startUtil
-	return a.lastCallDuration()
+	return a.utilization(wr) - startUtil
 }
 
 func (a *activeResources) free(wr storiface.WorkerResources, r storiface.Resources) {
@@ -110,15 +109,6 @@ func (a *activeResources) canHandleRequest(needRes storiface.Resources, wid stor
 	return true
 }
 
-// lastCallDuration returns a number is last call duration
-func (a *activeResources) lastCallDuration() float64 {
-	duration := time.Now().Sub(a.lastCallTime).Seconds()
-	if duration > 1000 {
-		duration = 1000
-	}
-	return duration
-}
-
 // utilization returns a number in 0..1 range indicating fraction of used resources
 func (a *activeResources) utilization(wr storiface.WorkerResources) float64 {
 	var max float64
@@ -153,16 +143,6 @@ func (a *activeResources) utilization(wr storiface.WorkerResources) float64 {
 	}
 
 	return max
-}
-
-func (wh *workerHandle) updateLastCall(taskType sealtasks.TaskType) {
-	if taskType == sealtasks.TTAddPiece {
-		wh.active.lastCallTime = time.Now()
-	}
-}
-
-func (wh *workerHandle) sequentialCall() float64 {
-	return wh.active.lastCallDuration()
 }
 
 func (wh *workerHandle) utilization() float64 {
