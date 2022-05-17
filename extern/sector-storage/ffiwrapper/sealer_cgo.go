@@ -37,7 +37,7 @@ import (
 
 var template CCTemplate
 
-var nextPreCommit time.Time
+var nextPreCommit = time.Now()
 
 var _ Storage = &Sealer{}
 
