@@ -535,7 +535,7 @@ func (sh *scheduler) trySched() {
 			"worker", bestWid,
 			"bestUtilization", bestUtilization)
 
-		workerUtil[bestWid] = windows[selectedWindow].allocated.add(info.Resources, needRes)
+		workerUtil[bestWid] += windows[selectedWindow].allocated.add(info.Resources, needRes)
 		windows[selectedWindow].todo = append(windows[selectedWindow].todo, task)
 
 		rmQueue = append(rmQueue, sqi)
