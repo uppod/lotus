@@ -494,6 +494,7 @@ func (sh *scheduler) trySched() {
 			}
 
 			if wu < bestLastCall {
+				log.Infof("wu is : %f", wu)
 				break
 			}
 
