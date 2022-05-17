@@ -495,9 +495,12 @@ func (sh *scheduler) trySched() {
 			log.Infof("任务类型：%s", task.taskType)
 			log.Infof("bestLastCall: %f", bestLastCall)
 			log.Infof("lastCall: %f", wu)
-			if wu < bestLastCall {
-				log.Infof("wu is : %f", wu)
-				break
+
+			if task.taskType == sealtasks.TTAddPiece {
+				if wu < bestLastCall {
+					log.Infof("wu is : %f", wu)
+					break
+				}
 			}
 
 			//wu, found := workerUtil[wid]
