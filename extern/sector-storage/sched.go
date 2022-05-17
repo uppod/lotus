@@ -77,9 +77,10 @@ type scheduler struct {
 type workerHandle struct {
 	workerRpc Worker
 
-	tasksCache  map[sealtasks.TaskType]struct{}
-	tasksUpdate time.Time
-	tasksLk     sync.Mutex
+	tasksCache       map[sealtasks.TaskType]struct{}
+	tasksUpdate      time.Time
+	nextAddPieceTime time.Time
+	tasksLk          sync.Mutex
 
 	info storiface.WorkerInfo
 
@@ -504,6 +505,16 @@ func (sh *scheduler) trySched() {
 				//
 				// * -> we're here
 				break
+			}
+
+			if task.taskType == sealtasks.TTAddPiece {
+				if w.isAllowAddPiece() {
+					log.Info("允许做AddPiece, 更新下次AddPiece时间")
+					w.updateNextAddPieceTime()
+				} else {
+					log.Info("不允许做AddPiece")
+					continue
+				}
 			}
 
 			info = w.info

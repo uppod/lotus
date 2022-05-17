@@ -145,6 +145,14 @@ func (a *activeResources) utilization(wr storiface.WorkerResources) float64 {
 	return max
 }
 
+func (wh *workerHandle) isAllowAddPiece() bool {
+	return time.Now().After(wh.nextAddPieceTime)
+}
+
+func (wh *workerHandle) updateNextAddPieceTime() {
+	wh.nextAddPieceTime = time.Now().Add(time.Second * 810)
+}
+
 func (wh *workerHandle) utilization() float64 {
 	wh.lk.Lock()
 	u := wh.active.utilization(wh.info.Resources)
