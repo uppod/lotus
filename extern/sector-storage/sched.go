@@ -486,6 +486,7 @@ func (sh *scheduler) trySched() {
 				continue
 			}
 
+			log.Infof("任务类型: %s", task.taskType)
 			if task.taskType == sealtasks.TTAddPiece {
 				wu, found := workerUtil[wid]
 				if !found {
