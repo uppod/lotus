@@ -678,7 +678,7 @@ func (sb *Sealer) ReadPiece(ctx context.Context, writer io.Writer, sector storag
 func (sb *Sealer) SealPreCommit1(ctx context.Context, sector storage.SectorRef, ticket abi.SealRandomness, pieces []abi.PieceInfo) (out storage.PreCommit1Out, err error) {
 
 	if time.Now().Before(nextPreCommit) {
-		return nil, fmt.Errorf("it takes %f seconds to get to the next P1", time.Now().Sub(nextPreCommit).Seconds())
+		return nil, fmt.Errorf("it takes %f seconds to get to the next P1", nextPreCommit.Sub(time.Now()).Seconds())
 	}
 
 	nextPreCommit = time.Now().Add(time.Second * 810)
