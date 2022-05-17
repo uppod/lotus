@@ -105,7 +105,7 @@ func (ps *poStScheduler) Schedule(ctx context.Context, primary bool, spt abi.Reg
 	selected := candidates[0]
 	worker := ps.workers[selected.id]
 
-	return worker.active.withResources(selected.id, worker.info, selected.res, &ps.lk, func() error {
+	return worker.active.withResources(selected.id, ps.postType, worker.info, selected.res, &ps.lk, func() error {
 		ps.lk.Unlock()
 		defer ps.lk.Lock()
 

@@ -122,6 +122,8 @@ type activeResources struct {
 	gpuUsed    float64
 	cpuUse     uint64
 
+	nextTaskTime time.Time
+
 	cond    *sync.Cond
 	waiting int
 }
@@ -526,7 +528,7 @@ func (sh *scheduler) trySched() {
 			"worker", bestWid,
 			"utilization", bestUtilization)
 
-		workerUtil[bestWid] += windows[selectedWindow].allocated.add(info.Resources, needRes)
+		workerUtil[bestWid] += windows[selectedWindow].allocated.add(task.taskType, info.Resources, needRes)
 		windows[selectedWindow].todo = append(windows[selectedWindow].todo, task)
 
 		rmQueue = append(rmQueue, sqi)

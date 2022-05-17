@@ -298,7 +298,7 @@ func (sw *schedWorker) workerCompactWindows() {
 
 				moved = append(moved, ti)
 				lower.todo = append(lower.todo, todo)
-				lower.allocated.add(worker.info.Resources, needRes)
+				lower.allocated.add(todo.taskType, worker.info.Resources, needRes)
 				window.allocated.free(worker.info.Resources, needRes)
 			}
 
@@ -454,7 +454,7 @@ func (sw *schedWorker) startProcessingTask(req *workerRequest) error {
 	needRes := w.info.Resources.ResourceSpec(req.sector.ProofType, req.taskType)
 
 	w.lk.Lock()
-	w.preparing.add(w.info.Resources, needRes)
+	w.preparing.add(req.taskType, w.info.Resources, needRes)
 	w.lk.Unlock()
 
 	go func() {
@@ -494,7 +494,7 @@ func (sw *schedWorker) startProcessingTask(req *workerRequest) error {
 		}()
 
 		// wait (if needed) for resources in the 'active' window
-		err = w.active.withResources(sw.wid, w.info, needRes, &w.lk, func() error {
+		err = w.active.withResources(sw.wid, req.taskType, w.info, needRes, &w.lk, func() error {
 			w.preparing.free(w.info.Resources, needRes)
 			w.lk.Unlock()
 			defer w.lk.Lock() // we MUST return locked from this function
@@ -536,7 +536,7 @@ func (sw *schedWorker) startProcessingReadyTask(req *workerRequest) error {
 
 	needRes := w.info.Resources.ResourceSpec(req.sector.ProofType, req.taskType)
 
-	w.active.add(w.info.Resources, needRes)
+	w.active.add(req.taskType, w.info.Resources, needRes)
 
 	go func() {
 		// Do the work!

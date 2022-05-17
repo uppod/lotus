@@ -9,7 +9,7 @@ import (
 	"github.com/filecoin-project/lotus/extern/sector-storage/storiface"
 )
 
-func (a *activeResources) withResources(id storiface.WorkerID, wr storiface.WorkerInfo, r storiface.Resources, locker sync.Locker, cb func() error) error {
+func (a *activeResources) withResources(id storiface.WorkerID, taskType sealtasks.TaskType, wr storiface.WorkerInfo, r storiface.Resources, locker sync.Locker, cb func() error) error {
 	for !a.canHandleRequest(r, id, "withResources", wr) {
 		if a.cond == nil {
 			a.cond = sync.NewCond(locker)
@@ -19,7 +19,7 @@ func (a *activeResources) withResources(id storiface.WorkerID, wr storiface.Work
 		a.waiting--
 	}
 
-	a.add(wr.Resources, r)
+	a.add(taskType, wr.Resources, r)
 
 	err := cb()
 
@@ -34,7 +34,7 @@ func (a *activeResources) hasWorkWaiting() bool {
 }
 
 // add task resources to activeResources and return utilization difference
-func (a *activeResources) add(wr storiface.WorkerResources, r storiface.Resources) float64 {
+func (a *activeResources) add(taskType sealtasks.TaskType, wr storiface.WorkerResources, r storiface.Resources) float64 {
 	startUtil := a.utilization(wr)
 
 	if r.GPUUtilization > 0 {
@@ -43,6 +43,10 @@ func (a *activeResources) add(wr storiface.WorkerResources, r storiface.Resource
 	a.cpuUse += r.Threads(wr.CPUs, len(wr.GPUs))
 	a.memUsedMin += r.MinMemory
 	a.memUsedMax += r.MaxMemory
+
+	if taskType == sealtasks.TTAddPiece {
+		a.nextTaskTime = time.Now().Add(time.Second * 810)
+	}
 
 	return a.utilization(wr) - startUtil
 }
@@ -66,6 +70,11 @@ func (a *activeResources) canHandleRequest(needRes storiface.Resources, wid stor
 	if info.IgnoreResources {
 		// shortcircuit; if this worker is ignoring resources, it can always handle the request.
 		return true
+	}
+
+	// 任务间隔时间
+	if time.Now().Before(a.nextTaskTime) {
+		return false
 	}
 
 	res := info.Resources
