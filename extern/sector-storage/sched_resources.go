@@ -35,7 +35,7 @@ func (a *activeResources) hasWorkWaiting() bool {
 
 // add task resources to activeResources and return utilization difference
 func (a *activeResources) add(wr storiface.WorkerResources, r storiface.Resources) float64 {
-	startUtil := a.utilization(wr)
+	//startUtil := a.utilization(wr)
 
 	if r.GPUUtilization > 0 {
 		a.gpuUsed += r.GPUUtilization
@@ -44,7 +44,10 @@ func (a *activeResources) add(wr storiface.WorkerResources, r storiface.Resource
 	a.memUsedMin += r.MinMemory
 	a.memUsedMax += r.MaxMemory
 
-	return a.utilization(wr) - startUtil
+	a.lastCallTime = time.Now()
+
+	//return a.utilization(wr) - startUtil
+	return a.lastCallDuration()
 }
 
 func (a *activeResources) free(wr storiface.WorkerResources, r storiface.Resources) {
@@ -111,9 +114,7 @@ func (a *activeResources) canHandleRequest(needRes storiface.Resources, wid stor
 
 // lastCallDuration returns a number is last call duration
 func (a *activeResources) lastCallDuration() float64 {
-	duration := time.Now().Sub(a.lastCallTime).Seconds()
-	a.lastCallTime = time.Now()
-	return duration
+	return time.Now().Sub(a.lastCallTime).Seconds()
 }
 
 // utilization returns a number in 0..1 range indicating fraction of used resources

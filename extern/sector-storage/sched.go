@@ -524,6 +524,7 @@ func (sh *scheduler) trySched() {
 			bestWid = wid
 			selectedWindow = wnd
 			//bestUtilization = wu
+			bestLastCall = wu
 			break
 		}
 
