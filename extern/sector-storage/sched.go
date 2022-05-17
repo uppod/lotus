@@ -509,10 +509,8 @@ func (sh *scheduler) trySched() {
 
 			if task.taskType == sealtasks.TTAddPiece {
 				if w.isAllowAddPiece() {
-					log.Info("允许做AddPiece, 更新下次AddPiece时间")
 					w.updateNextAddPieceTime()
 				} else {
-					log.Info("不允许做AddPiece")
 					continue
 				}
 			}

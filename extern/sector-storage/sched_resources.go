@@ -146,6 +146,7 @@ func (a *activeResources) utilization(wr storiface.WorkerResources) float64 {
 }
 
 func (wh *workerHandle) isAllowAddPiece() bool {
+	log.Debugf("The worker needs %f seconds from the next AP", wh.nextAddPieceTime.Sub(time.Now()).Seconds())
 	return time.Now().After(wh.nextAddPieceTime)
 }
 

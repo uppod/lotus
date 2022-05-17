@@ -10,6 +10,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"github.com/ipfs/go-cid"
 	"golang.org/x/xerrors"
 	"io"
@@ -677,7 +678,7 @@ func (sb *Sealer) ReadPiece(ctx context.Context, writer io.Writer, sector storag
 func (sb *Sealer) SealPreCommit1(ctx context.Context, sector storage.SectorRef, ticket abi.SealRandomness, pieces []abi.PieceInfo) (out storage.PreCommit1Out, err error) {
 
 	if time.Now().Before(nextPreCommit) {
-		return nil, xerrors.New("pre commit must be 810 second apart")
+		return nil, fmt.Errorf("it takes %f seconds to get to the next P1", time.Now().Sub(nextPreCommit).Seconds())
 	}
 
 	nextPreCommit = time.Now().Add(time.Second * 810)
