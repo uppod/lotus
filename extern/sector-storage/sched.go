@@ -122,7 +122,7 @@ type activeResources struct {
 	gpuUsed    float64
 	cpuUse     uint64
 
-	nextTaskTime time.Time
+	lastCallTime time.Time
 
 	cond    *sync.Cond
 	waiting int
@@ -472,6 +472,7 @@ func (sh *scheduler) trySched() {
 		var info storiface.WorkerInfo
 		var bestWid storiface.WorkerID
 		bestUtilization := math.MaxFloat64 // smaller = better
+		bestLastCall := 810.0
 
 		for i, wnd := range acceptableWindows[task.indexHeap] {
 			wid := sh.openWindows[wnd].worker
@@ -488,31 +489,42 @@ func (sh *scheduler) trySched() {
 
 			wu, found := workerUtil[wid]
 			if !found {
-				wu = w.utilization()
+				wu = w.sequentialCall()
 				workerUtil[wid] = wu
 			}
-			if wu >= bestUtilization {
-				// acceptable worker list is initially sorted by utilization, and the initially-best workers
-				// will be assigned tasks first. This means that if we find a worker which isn't better, it
-				// probably means that the other workers aren't better either.
-				//
-				// utilization
-				// ^
-				// |       /
-				// | \    /
-				// |  \  /
-				// |   *
-				// #--------> acceptableWindow index
-				//
-				// * -> we're here
+
+			if wu >= bestLastCall {
 				break
 			}
+
+			//wu, found := workerUtil[wid]
+			//if !found {
+			//	wu = w.utilization()
+			//	workerUtil[wid] = wu
+			//}
+			//if wu >= bestUtilization {
+			//	// acceptable worker list is initially sorted by utilization, and the initially-best workers
+			//	// will be assigned tasks first. This means that if we find a worker which isn't better, it
+			//	// probably means that the other workers aren't better either.
+			//	//
+			//	// utilization
+			//	// ^
+			//	// |       /
+			//	// | \    /
+			//	// |  \  /
+			//	// |   *
+			//	// #--------> acceptableWindow index
+			//	//
+			//	// * -> we're here
+			//	break
+			//}
 
 			info = w.info
 			needRes = res
 			bestWid = wid
 			selectedWindow = wnd
-			bestUtilization = wu
+			//bestUtilization = wu
+			break
 		}
 
 		if selectedWindow < 0 {
@@ -528,7 +540,7 @@ func (sh *scheduler) trySched() {
 			"worker", bestWid,
 			"utilization", bestUtilization)
 
-		workerUtil[bestWid] += windows[selectedWindow].allocated.add(task.taskType, info.Resources, needRes)
+		workerUtil[bestWid] += windows[selectedWindow].allocated.add(info.Resources, needRes)
 		windows[selectedWindow].todo = append(windows[selectedWindow].todo, task)
 
 		rmQueue = append(rmQueue, sqi)
