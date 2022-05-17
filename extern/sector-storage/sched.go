@@ -2,7 +2,6 @@ package sectorstorage
 
 import (
 	"context"
-	"math"
 	"math/rand"
 	"sort"
 	"sync"
@@ -471,7 +470,7 @@ func (sh *scheduler) trySched() {
 		var needRes storiface.Resources
 		var info storiface.WorkerInfo
 		var bestWid storiface.WorkerID
-		bestUtilization := math.MaxFloat64 // smaller = better
+		//bestUtilization := math.MaxFloat64 // smaller = better
 		bestLastCall := 810.0
 
 		for i, wnd := range acceptableWindows[task.indexHeap] {
@@ -487,15 +486,18 @@ func (sh *scheduler) trySched() {
 				continue
 			}
 
-			wu, found := workerUtil[wid]
-			if !found {
-				wu = w.sequentialCall()
-				workerUtil[wid] = wu
-			}
+			if task.taskType == sealtasks.TTAddPiece {
+				wu, found := workerUtil[wid]
+				if !found {
+					wu = w.sequentialCall()
+					workerUtil[wid] = wu
+				}
 
-			if wu < bestLastCall {
-				log.Infof("wu is : %f", wu)
-				break
+				if wu < bestLastCall {
+					log.Infof("wu is : %f", wu)
+					break
+				}
+				bestLastCall = wu
 			}
 
 			//wu, found := workerUtil[wid]
@@ -525,7 +527,7 @@ func (sh *scheduler) trySched() {
 			bestWid = wid
 			selectedWindow = wnd
 			//bestUtilization = wu
-			bestLastCall = wu
+
 			break
 		}
 
@@ -540,9 +542,12 @@ func (sh *scheduler) trySched() {
 			"task", task.taskType,
 			"window", selectedWindow,
 			"worker", bestWid,
-			"utilization", bestUtilization)
+			"lastcall", bestLastCall)
 
 		workerUtil[bestWid] += windows[selectedWindow].allocated.add(info.Resources, needRes)
+		if task.taskType == sealtasks.TTAddPiece {
+			windows[selectedWindow].allocated.updateLastCallTime()
+		}
 		windows[selectedWindow].todo = append(windows[selectedWindow].todo, task)
 
 		rmQueue = append(rmQueue, sqi)
