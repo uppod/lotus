@@ -38,6 +38,7 @@ import (
 var template CCTemplate
 
 var nextPreCommit = time.Now()
+var initParent = false
 
 var _ Storage = &Sealer{}
 
@@ -681,7 +682,12 @@ func (sb *Sealer) SealPreCommit1(ctx context.Context, sector storage.SectorRef, 
 		return nil, fmt.Errorf("it takes %f seconds to get to the next P1", nextPreCommit.Sub(time.Now()).Seconds())
 	}
 
-	nextPreCommit = time.Now().Add(time.Second * 810)
+	if initParent {
+		nextPreCommit = time.Now().Add(time.Second * 810)
+	} else {
+		nextPreCommit = time.Now().Add(time.Minute * 36)
+		initParent = true
+	}
 
 	paths, done, err := sb.sectors.AcquireSector(ctx, sector, storiface.FTUnsealed, storiface.FTSealed|storiface.FTCache, storiface.PathSealing)
 	if err != nil {
