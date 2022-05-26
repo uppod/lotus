@@ -18,6 +18,7 @@ import (
 	"math/bits"
 	"os"
 	"runtime"
+	"sync"
 	"time"
 
 	"github.com/detailyang/go-fallocate"
@@ -39,6 +40,7 @@ var template CCTemplate
 
 var nextPreCommit = time.Now()
 var initParent = false
+var mutex sync.Mutex
 
 var _ Storage = &Sealer{}
 
@@ -677,17 +679,19 @@ func (sb *Sealer) ReadPiece(ctx context.Context, writer io.Writer, sector storag
 }
 
 func (sb *Sealer) SealPreCommit1(ctx context.Context, sector storage.SectorRef, ticket abi.SealRandomness, pieces []abi.PieceInfo) (out storage.PreCommit1Out, err error) {
-
+	mutex.Lock()
 	if time.Now().Before(nextPreCommit) {
+		mutex.Unlock()
 		return nil, fmt.Errorf("it takes %f seconds to get to the next P1", nextPreCommit.Sub(time.Now()).Seconds())
 	}
 
 	if initParent {
-		nextPreCommit = time.Now().Add(time.Second * 810)
+		nextPreCommit = time.Now().Add(time.Second * 1050)
 	} else {
 		nextPreCommit = time.Now().Add(time.Minute * 36)
 		initParent = true
 	}
+	mutex.Unlock()
 
 	paths, done, err := sb.sectors.AcquireSector(ctx, sector, storiface.FTUnsealed, storiface.FTSealed|storiface.FTCache, storiface.PathSealing)
 	if err != nil {
