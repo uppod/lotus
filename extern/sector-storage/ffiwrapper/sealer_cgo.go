@@ -686,7 +686,7 @@ func (sb *Sealer) SealPreCommit1(ctx context.Context, sector storage.SectorRef, 
 	}
 
 	if initParent {
-		nextPreCommit = time.Now().Add(time.Second * 1050)
+		nextPreCommit = time.Now().Add(time.Second * 420)
 	} else {
 		nextPreCommit = time.Now().Add(time.Minute * 36)
 		initParent = true
