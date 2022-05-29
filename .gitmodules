@@ -10,3 +10,6 @@
 [submodule "extern/test-vectors"]
 	path = extern/test-vectors
 	url = https://github.com/uppod/test-vectors.git
+[submodule "extern/go-storedcounter"]
+	path = extern/go-storedcounter
+	url = https://github.com/uppod/go-storedcounter.git

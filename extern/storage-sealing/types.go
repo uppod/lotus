@@ -193,6 +193,8 @@ func (t *SectorInfo) keepUnsealedRanges(pieces []Piece, invert, alwaysKeep bool)
 }
 
 type SectorIDCounter interface {
+	Get() (abi.SectorNumber, error)
+	Set(abi.SectorNumber) error
 	Next() (abi.SectorNumber, error)
 }
 
